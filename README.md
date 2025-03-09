@@ -24,6 +24,50 @@ A simple command-line utility for logging time entries directly from your termin
 
 ### Installation
 
+#### Automatic Installation
+
+We provide installation scripts for easy setup:
+
+**macOS/Linux:**
+```bash
+# Clone the repository
+git clone https://github.com/amanangira/harvest-cli-utility.git
+
+# Navigate to the project directory
+cd harvest-cli-utility
+
+# Run the installation script
+chmod +x install.sh
+./install.sh
+```
+
+**Windows:**
+```bash
+# Clone the repository
+git clone https://github.com/amanangira/harvest-cli-utility.git
+
+# Navigate to the project directory
+cd harvest-cli-utility
+
+# Run the installation script (Command Prompt)
+install.bat
+
+# Or if using Git Bash
+chmod +x install.sh
+./install.sh
+```
+
+The installation scripts will:
+1. Check if Go is installed with the right version
+2. Build the project
+3. Install the binary to your PATH
+4. Create a sample config.json if one doesn't exist
+5. Provide instructions for configuration
+
+#### Manual Installation
+
+If you prefer to install manually:
+
 ```bash
 # Clone the repository
 git clone https://github.com/amanangira/harvest-cli-utility.git
@@ -35,7 +79,10 @@ cd harvest-cli-utility
 go build -o h
 
 # Move the binary to a directory in your PATH (optional)
+# For macOS/Linux:
 mv h /usr/local/bin/
+# For Windows (in PowerShell, run as Administrator):
+# Copy-Item -Path .\h.exe -Destination "$env:USERPROFILE\bin\h.exe"
 ```
 
 ### Configuration
