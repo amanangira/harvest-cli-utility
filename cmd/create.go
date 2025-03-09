@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"harvest-cli/pkg/config"
 	"harvest-cli/pkg/harvest"
@@ -19,6 +20,7 @@ type TimeEntry struct {
 	ProjectID int
 	TaskID    int
 	Time      float64
+	Notes     string
 }
 
 // appConfig holds the application configuration
@@ -29,7 +31,7 @@ func CreateCmd() *cobra.Command {
 	var useDefault bool
 	var useDefaultMode bool
 	var date, projectName, taskName string
-	var timeValue string
+	var timeValue, taskNotes string
 
 	// Initialize the command
 	cmd := &cobra.Command{
@@ -57,7 +59,7 @@ Use -D flag for default mode, which uses default project and task from config.`,
 				handleDefaultMode(&entry)
 			} else {
 				// Regular mode - process arguments or prompt for input
-				handleRegularMode(cmd, &entry, useDefault, date, projectName, taskName, timeValue)
+				handleRegularMode(cmd, &entry, useDefault, date, projectName, taskName, timeValue, taskNotes)
 			}
 
 			// Create the time entry in Harvest
@@ -71,6 +73,7 @@ Use -D flag for default mode, which uses default project and task from config.`,
 	cmd.Flags().StringVarP(&projectName, "project", "p", "", "Project")
 	cmd.Flags().StringVarP(&taskName, "action", "a", "", "Action (Task)")
 	cmd.Flags().StringVarP(&timeValue, "time", "t", "", "Duration in the following format (e.g., HH:MM)")
+	cmd.Flags().StringVarP(&taskNotes, "Notes", "n", "", "Notes")
 
 	return cmd
 }
@@ -110,10 +113,31 @@ func handleDefaultMode(entry *TimeEntry) {
 		log.Fatalf("Prompt failed: %v", err)
 	}
 	entry.Time, _ = parseDuration(result)
+
+	// Handle notes
+
+	prompt = promptui.Prompt{
+		Label: "Task Notes",
+		Validate: func(input string) error {
+			if input == "" {
+				return errors.New("notes cannot be blank")
+			}
+
+			return nil
+		},
+	}
+
+	result, err = prompt.Run()
+	if err != nil {
+		fmt.Printf("Prompt failed: %v\n", err)
+		return
+	}
+
+	entry.Notes = result
 }
 
 // handleRegularMode handles the regular mode for time entry creation
-func handleRegularMode(cmd *cobra.Command, entry *TimeEntry, useDefault bool, date, projectName, taskName, timeValue string) {
+func handleRegularMode(cmd *cobra.Command, entry *TimeEntry, useDefault bool, date, projectName, taskName, timeValue, taskNotes string) {
 	var selectedProject *config.Project
 
 	// Handle date
@@ -225,6 +249,29 @@ func handleRegularMode(cmd *cobra.Command, entry *TimeEntry, useDefault bool, da
 		entry.Time, _ = parseDuration(result)
 	}
 
+	// Handle notes
+	if taskNotes != "" {
+		entry.Notes = taskNotes
+	} else {
+		prompt := promptui.Prompt{
+			Label: "Task Notes",
+			Validate: func(input string) error {
+				if input == "" {
+					return errors.New("notes cannot be blank")
+				}
+
+				return nil
+			},
+		}
+		result, err := prompt.Run()
+		if err != nil {
+			fmt.Printf("Prompt failed: %v\n", err)
+			return
+		}
+
+		entry.Notes = result
+	}
+
 	// Output the final entry details
 	hours, minutes := convertDecimalToHoursMinutes(entry.Time)
 	fmt.Println("\nTime Entry Details:")
@@ -232,6 +279,7 @@ func handleRegularMode(cmd *cobra.Command, entry *TimeEntry, useDefault bool, da
 	fmt.Printf("Project ID: %d\n", entry.ProjectID)
 	fmt.Printf("Task ID: %d\n", entry.TaskID)
 	fmt.Printf("Time: %.2f hours (%02d:%02d)\n", entry.Time, hours, minutes)
+	fmt.Print("Task Notes: \n", entry.Notes)
 }
 
 // createHarvestTimeEntry creates a time entry in Harvest
@@ -245,6 +293,7 @@ func createHarvestTimeEntry(entry *TimeEntry) {
 		ProjectID: entry.ProjectID,
 		TaskID:    entry.TaskID,
 		Hours:     entry.Time,
+		Notes:     entry.Notes,
 	}
 
 	// Send request to Harvest API
@@ -261,6 +310,7 @@ func createHarvestTimeEntry(entry *TimeEntry) {
 	fmt.Printf("Project ID: %d\n", createdEntry.ProjectID)
 	fmt.Printf("Task ID: %d\n", createdEntry.TaskID)
 	fmt.Printf("Hours: %.2f\n", createdEntry.Hours)
+	fmt.Printf("Notes: %s\n", createdEntry.Notes)
 }
 
 // convertDecimalToHoursMinutes converts decimal hours to hours and minutes
