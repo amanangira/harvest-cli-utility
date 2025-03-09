@@ -1,8 +1,28 @@
 # Harvest CLI Utility
 
-A simple command-line utility for logging time entries for your work.
+A simple command-line utility for logging time entries directly from your terminal to your Harvest account. This tool helps developers and teams track their time efficiently without leaving the command line.
 
-## Installation
+![Harvest CLI Demo](https://via.placeholder.com/800x400?text=Harvest+CLI+Demo)
+
+## Features
+
+- ✅ Create, update, delete, and list time entries directly from your terminal
+- ✅ Interactive prompts with smart defaults for quick time logging
+- ✅ Project and task selection from your Harvest account configuration
+- ✅ Daily, weekly, and monthly time summaries
+- ✅ Multiple time entry selection for batch operations
+- ✅ Tabular output format for better readability
+- ✅ Date filtering for all commands
+- ✅ Default interactive mode for better user experience
+
+## Quick Start
+
+### Prerequisites
+
+- Go 1.18 or higher
+- A Harvest account with API access
+
+### Installation
 
 ```bash
 # Clone the repository
@@ -18,17 +38,16 @@ go build -o h
 mv h /usr/local/bin/
 ```
 
-## Configuration
+### Configuration
 
-The application uses a `config.json` file to store project and task information. The file should be placed in the same directory as the executable or in the current working directory.
+Create a `config.json` file in the same directory as the executable with your Harvest API credentials and project information:
 
-Example `config.json`:
 ```json
 {
   "projects": [
     {
       "id": 123,
-      "name": "Company A | Project AA",
+      "name": "Project A",
       "tasks": [
         {
           "id": 456,
@@ -39,23 +58,9 @@ Example `config.json`:
           "name": "Non-Billable"
         }
       ]
-    },
-    {
-      "id": 111,
-      "name": "Company B | Project BB",
-      "tasks": [
-        {
-          "id": 222,
-          "name": "Software Development"
-        },
-        {
-          "id": 333,
-          "name": "Fun"
-        }
-      ]
     }
   ],
-  "default_project": "Company A | Project AA",
+  "default_project": "Project A",
   "default_task": "Software Development",
   "harvest_api": {
     "account_id": "YOUR_HARVEST_ACCOUNT_ID",
@@ -64,14 +69,14 @@ Example `config.json`:
 }
 ```
 
-### Harvest API Configuration
+#### Getting Your Harvest API Credentials
 
-To use the Harvest API integration, you need to:
+1. Log in to your Harvest account
+2. Go to Settings > Developer
+3. Create a new personal access token
+4. Note your Account ID and Token
 
-1. Get your Harvest Account ID and API Token from your Harvest account
-2. Add them to the `harvest_api` section in your `config.json` file
-
-## Usage
+## Usage Guide
 
 The CLI utility uses a simple syntax:
 
@@ -83,137 +88,160 @@ h [command] [arguments]
 
 #### Create a Time Entry
 
-```
-h create [flags]
+```bash
+# Quick create with defaults
+h create -D
+
+# Interactive create (prompts for all fields)
+h create
+
+# Create with specific values
+h create -d 2023-03-06 -p "Project A" -a "Software Development" -t "7:30"
 ```
 
 Flags:
 - `-d, --date string`: Date in YYYY-MM-DD format (default: today)
 - `-p, --project string`: Project name (must match a name in config.json)
-- `-a, --action string`: Action/Task name (must match a task name for the selected project in config.json)
+- `-a, --action string`: Action/Task name (must match a task name for the selected project)
 - `-t, --duration string`: Duration in HH:MM format (e.g., "7:30" for 7 hours and 30 minutes)
-- `-D, --default-mode`: Use default mode (uses default project and task from config)
-
-Examples:
-```bash
-# Create a time entry with all arguments
-h create -d 2023-03-06 -p "Corporate Visions | vPlaybook" -a "Software Development" -t "7:30"
-
-# Create a time entry with interactive prompts
-h create
-
-# Create a time entry with some arguments and prompts for others
-h create -d 2023-03-06 -t "4:30"
-
-# Create a time entry using default mode (uses default project and task from config)
-h create -D
-```
+- `-D, --default-mode`: Use default project and task from config
 
 #### Delete Time Entries
 
-```
-h delete [timeEntryID] [flags]
+```bash
+# Delete entries interactively (select multiple)
+h delete
+
+# Delete entries for a specific date
+h delete -d 2023-03-06
+
+# Delete a specific entry by ID
+h delete 123456789 -n
 ```
 
 Flags:
 - `-n, --non-interactive`: Use non-interactive mode with a time entry ID
 - `-d, --date string`: Date in YYYY-MM-DD format (default: today)
 
-By default, the delete command operates in interactive mode, allowing you to:
-- Confirm or modify the default date before proceeding
-- Select multiple time entries to delete one by one
-- View a summary of selected entries before deletion
-- Get a deletion summary showing successful and failed operations
+**Multi-Selection Interface:**
 
-Examples:
-```bash
-# Delete time entries interactively (default behavior)
-h delete
+The delete command features an intuitive multi-selection interface that allows you to:
+- Select/deselect individual entries by entering their number
+- Select all entries at once with 'a'
+- Deselect all entries with 'n'
+- Proceed with deletion with 'd'
+- Cancel the operation with 'q'
 
-# Delete time entries from a specific date
-h delete -d 2023-03-06
-
-# Delete a specific time entry by ID in non-interactive mode
-h delete 123456789 -n
-```
+This makes it easy to delete multiple time entries in a single operation.
 
 #### Update a Time Entry
 
-```
-h update [flags]
-```
-
-Flags:
-- `-i, --interactive`: Use interactive mode (deprecated, now the default behavior)
-- `-d, --date string`: Date in YYYY-MM-DD format (default: today) - used to specify the date for time entry selection
-
-The update process:
-- Allows you to confirm or modify the default date
-- Shows all time entries for the selected date
-- Lets you select which time entry to update
-- Shows a summary of changes before confirming the update
-- Provides an intuitive menu interface for confirming actions
-- Displays detailed information about the updated time entry
-
-Examples:
 ```bash
-# Update a time entry (shows all entries for today)
+# Update an entry (select from today's entries)
 h update
 
-# Update a time entry from a specific date
+# Update an entry from a specific date
 h update -d 2023-03-06
 ```
 
+Flags:
+- `-d, --date string`: Date in YYYY-MM-DD format (default: today)
+
 #### List Time Entries
 
-```
-h list [flags]
+```bash
+# List today's entries
+h list
+
+# List entries for a specific date
+h list -d 2023-03-06
+
+# Show weekly summary
+h list -w
+
+# Show monthly summary
+h list -m
 ```
 
 Flags:
-- `-d, --date string`: Date in YYYY-MM-DD format (default: today) - used to list entries for a specific date
+- `-d, --date string`: Date in YYYY-MM-DD format (default: today)
 - `-m, --monthly`: Show monthly summary
 - `-w, --weekly`: Show weekly summary
 
-Examples:
+## Common Workflows
+
+### Log Time for Today
+
 ```bash
-# List time entries for today
-h list
+# Quick logging with defaults
+h create -D
 
-# List time entries for a specific date
-h list -d 2023-03-06
-
-# Show weekly summary for the current week
-h list -w
-
-# Show weekly summary for a specific week (using a date within that week)
-h list -w -d 2023-03-06
-
-# Show monthly summary for the current month
-h list -m
-
-# Show monthly summary for a specific month (using a date within that month)
-h list -m -d 2023-03-06
+# Interactive logging
+h create
 ```
 
-## Features
+### Review and Update Today's Entries
 
-- Interactive prompts for missing arguments
-- Date validation in YYYY-MM-DD format
-- Project selection from configuration
-- Task selection based on the selected project
-- Time input in HH:MM format
-- Default mode for quick time entry creation
-- Integration with Harvest API for creating, updating, and deleting time entries
-- Daily, weekly, and monthly summaries of time entries
-- Tabular output format for better readability
-- Date filtering for all commands
-- Intuitive menu-based confirmation interfaces
-- Detailed summaries of changes before confirmation
-- Multiple time entry selection for batch operations
-- Interactive navigation through time entries
-- Default interactive mode for better user experience
+```bash
+# List today's entries
+h list
+
+# Update an entry if needed
+h update
+```
+
+### Weekly Review
+
+```bash
+# View weekly summary
+h list -w
+
+# Delete incorrect entries
+h delete
+```
+
+### Batch Delete Multiple Entries
+
+```bash
+# Select the date containing entries to delete
+h delete -d 2023-03-06
+
+# Use the multi-select interface:
+# - Enter numbers to select/deselect entries
+# - Enter 'a' to select all
+# - Enter 'd' when done
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **API Authentication Errors**: Ensure your Harvest API credentials are correct in config.json
+2. **Project/Task Not Found**: Verify that project and task names match exactly with your config.json
+3. **Command Not Found**: Make sure the binary is in your PATH or use the full path to the executable
+
+### Getting Help
+
+For each command, you can use the `--help` flag to see available options:
+
+```bash
+h --help
+h create --help
+h delete --help
+h update --help
+h list --help
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 

@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"harvest-cli/pkg/config"
 	"harvest-cli/pkg/harvest"
 	"log"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/manifoldco/promptui"
@@ -115,54 +118,81 @@ func handleInteractiveDelete(client *harvest.Client, date string) {
 		return
 	}
 
-	// Create a list of time entries for selection with promptui
-	prompt := promptui.Select{
-		Label: "Select time entries to delete (press enter to select, then confirm)",
-		Items: timeEntries,
-		Size:  10,
-		Templates: &promptui.SelectTemplates{
-			Label:    "{{ .Project.Name }} - {{ .Task.Name }}",
-			Active:   "→ {{ .Project.Name }} - {{ .Task.Name }} ({{ .Hours }} hours) - {{ .Notes }}",
-			Inactive: "  {{ .Project.Name }} - {{ .Task.Name }} ({{ .Hours }} hours) - {{ .Notes }}",
-			Selected: "Selected: {{ .Project.Name }} - {{ .Task.Name }}",
-		},
-	}
+	// Create a custom multi-select interface
+	reader := bufio.NewReader(os.Stdin)
 
 	// Track selected entries
-	var selectedEntries []harvest.TimeEntry
+	selectedIndices := make(map[int]bool)
 
-	// Allow multiple selection
-	fmt.Println("\nSelect time entries to delete:")
-	fmt.Println("Select entries one by one, you'll be asked if you want to select more after each selection")
+	// Display instructions
+	fmt.Println("\nMulti-select Time Entries to Delete:")
+	fmt.Println("-----------------------------------")
+	fmt.Println("Instructions:")
+	fmt.Println("- Enter the number of an entry to select/deselect it")
+	fmt.Println("- Enter 'a' to select all entries")
+	fmt.Println("- Enter 'n' to deselect all entries")
+	fmt.Println("- Enter 'd' when done to proceed with deletion")
+	fmt.Println("- Enter 'q' to quit without deleting")
+	fmt.Println("-----------------------------------")
 
+	// Main selection loop
 	for {
-		index, _, err := prompt.Run()
-		if err != nil {
-			if err.Error() == "^C" {
-				fmt.Println("Operation cancelled")
-				return
+		// Display the current list with selection status
+		fmt.Println("\nTime entries for", date, ":")
+		fmt.Println("-----------------------------------")
+
+		for i, entry := range timeEntries {
+			hours, minutes := convertDecimalToHoursMinutes(entry.Hours)
+			selected := " "
+			if selectedIndices[i] {
+				selected = "X"
 			}
-			log.Fatalf("Prompt failed: %v", err)
+
+			fmt.Printf("[%d] [%s] %s - %s (%02d:%02d) - %s\n",
+				i+1,
+				selected,
+				entry.Project.Name,
+				entry.Task.Name,
+				hours,
+				minutes,
+				entry.Notes)
 		}
 
-		// Add the selected entry
-		selectedEntries = append(selectedEntries, timeEntries[index])
+		fmt.Println("-----------------------------------")
+		fmt.Printf("%d of %d entries selected\n", len(selectedIndices), len(timeEntries))
+		fmt.Print("Enter selection (number, a, n, d, q): ")
 
-		// Ask if user wants to select more
-		continueOptions := []string{"Select another entry", "Proceed with deletion"}
-		continuePrompt := promptui.Select{
-			Label: fmt.Sprintf("%d entries selected. What would you like to do?", len(selectedEntries)),
-			Items: continueOptions,
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		switch strings.ToLower(input) {
+		case "a": // Select all
+			for i := range timeEntries {
+				selectedIndices[i] = true
+			}
+		case "n": // Deselect all
+			selectedIndices = make(map[int]bool)
+		case "d": // Done, proceed with deletion
+			goto processSelection
+		case "q": // Quit
+			fmt.Println("Operation cancelled")
+			return
+		default: // Try to parse as a number
+			num, err := strconv.Atoi(input)
+			if err == nil && num > 0 && num <= len(timeEntries) {
+				// Toggle selection
+				idx := num - 1
+				selectedIndices[idx] = !selectedIndices[idx]
+			}
 		}
+	}
 
-		continueIndex, _, err := continuePrompt.Run()
-		if err != nil {
-			log.Fatalf("Prompt failed: %v", err)
-		}
-
-		if continueIndex == 1 {
-			// Proceed with deletion
-			break
+processSelection:
+	// Collect selected entries
+	var selectedEntries []harvest.TimeEntry
+	for i, entry := range timeEntries {
+		if selectedIndices[i] {
+			selectedEntries = append(selectedEntries, entry)
 		}
 	}
 
@@ -173,6 +203,7 @@ func handleInteractiveDelete(client *harvest.Client, date string) {
 
 	// Display selected entries
 	fmt.Println("\nSelected Time Entries:")
+	fmt.Println("-----------------------------------")
 	for i, entry := range selectedEntries {
 		hours, minutes := convertDecimalToHoursMinutes(entry.Hours)
 		fmt.Printf("%d. ID: %d - %s - %s - %s (%02d:%02d)\n",
@@ -184,20 +215,14 @@ func handleInteractiveDelete(client *harvest.Client, date string) {
 			hours,
 			minutes)
 	}
+	fmt.Println("-----------------------------------")
 
 	// Confirm deletion with options
-	deleteOptions := []string{"Delete selected time entries", "Cancel deletion"}
-	deletePrompt := promptui.Select{
-		Label: "What would you like to do?",
-		Items: deleteOptions,
-	}
+	fmt.Print("Are you sure you want to delete these entries? (y/n): ")
+	confirm, _ := reader.ReadString('\n')
+	confirm = strings.TrimSpace(strings.ToLower(confirm))
 
-	deleteIndex, _, err := deletePrompt.Run()
-	if err != nil {
-		log.Fatalf("Prompt failed: %v", err)
-	}
-
-	if deleteIndex == 1 {
+	if confirm != "y" && confirm != "yes" {
 		fmt.Println("Deletion cancelled")
 		return
 	}
@@ -216,7 +241,12 @@ func handleInteractiveDelete(client *harvest.Client, date string) {
 	}
 
 	// Summary
-	fmt.Printf("\nDeletion Summary: %d successful, %d failed\n", successCount, failCount)
+	fmt.Println("\nDeletion Summary:")
+	fmt.Println("-----------------------------------")
+	fmt.Printf("Total: %d entries\n", len(selectedEntries))
+	fmt.Printf("Successful: %d\n", successCount)
+	fmt.Printf("Failed: %d\n", failCount)
+	fmt.Println("-----------------------------------")
 }
 
 // handleDirectDelete handles the direct deletion of a time entry by ID
