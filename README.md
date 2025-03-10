@@ -9,7 +9,7 @@ A simple command-line utility for logging time entries directly from your termin
 - ✅ Create, update, delete, and list time entries directly from your terminal
 - ✅ Interactive prompts with smart defaults for quick time logging
 - ✅ Project and task selection from your Harvest account configuration
-- ✅ Daily, weekly, and monthly time summaries
+- ✅ Daily, weekly, and monthly time summaries with task-based aggregation
 - ✅ Multiple time entry selection for batch operations
 - ✅ Tabular output format for better readability
 - ✅ Date filtering for all commands
@@ -238,6 +238,15 @@ Flags:
 - `-m, --monthly`: Show monthly summary
 - `-w, --weekly`: Show weekly summary
 
+**Enhanced Output:**
+
+The list command now provides detailed task-based aggregation for all views:
+- Daily view: Shows individual time entries followed by a task summary with percentages
+- Weekly view: Shows project/task breakdown followed by a task-only summary across all projects
+- Monthly view: Shows project/task breakdown followed by a task-only summary across all projects
+
+This makes it easy to see how your time is distributed across different tasks, regardless of which projects they belong to.
+
 ## Common Workflows
 
 ### Log Time for Today
@@ -280,6 +289,19 @@ h delete -d 2023-03-06
 # - Enter numbers to select/deselect entries
 # - Enter 'a' to select all
 # - Enter 'd' when done
+```
+
+### Task-Based Time Analysis
+
+```bash
+# View task distribution for today
+h list
+
+# View task distribution for the week
+h list -w
+
+# View task distribution for the month
+h list -m
 ```
 
 ## Troubleshooting

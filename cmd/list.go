@@ -21,6 +21,12 @@ type ProjectSummary struct {
 	TotalHours    float64
 }
 
+// TaskSummary represents a summary of time entries for a task across projects
+type TaskSummary struct {
+	TaskName   string
+	TotalHours float64
+}
+
 // ListCmd returns the list command
 func ListCmd() *cobra.Command {
 	var monthly, weekly bool
@@ -109,6 +115,7 @@ func handleDailyList(client *harvest.Client, date string) {
 	fmt.Fprintln(w, "----\t------------------------\t--------------------\t--------")
 
 	var totalHours float64
+	taskHours := make(map[string]float64)
 
 	for _, entry := range timeEntries {
 		hours, minutes := convertDecimalToHoursMinutes(entry.Hours)
@@ -135,6 +142,9 @@ func handleDailyList(client *harvest.Client, date string) {
 			duration)
 
 		totalHours += entry.Hours
+
+		// Aggregate hours by task
+		taskHours[entry.Task.Name] += entry.Hours
 	}
 
 	// Flush the tabwriter
@@ -143,6 +153,36 @@ func handleDailyList(client *harvest.Client, date string) {
 	// Print total
 	totalHoursInt, totalMinutes := convertDecimalToHoursMinutes(totalHours)
 	fmt.Printf("\nTotal: %02d:%02d hours\n", totalHoursInt, totalMinutes)
+
+	// Print task-based aggregation
+	fmt.Println("\nTime by Task:")
+	fmt.Println("------------------------------------")
+
+	// Sort tasks by name
+	var taskNames []string
+	for taskName := range taskHours {
+		taskNames = append(taskNames, taskName)
+	}
+	sort.Strings(taskNames)
+
+	// Create a new tabwriter for task summary
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(tw, "Task\tDuration\t% of Total")
+	fmt.Fprintln(tw, "----\t--------\t----------")
+
+	for _, taskName := range taskNames {
+		hours := taskHours[taskName]
+		hoursInt, minutes := convertDecimalToHoursMinutes(hours)
+		percentage := (hours / totalHours) * 100
+
+		fmt.Fprintf(tw, "%s\t%02d:%02d\t%.1f%%\n",
+			taskName,
+			hoursInt,
+			minutes,
+			percentage)
+	}
+
+	tw.Flush()
 }
 
 // handleWeeklySummary handles showing a weekly summary of time entries
@@ -202,6 +242,7 @@ func showWeeklySummary(client *harvest.Client, startDate time.Time) {
 	fmt.Fprintln(w, "-------\t----\t--------")
 
 	var totalHours float64
+	taskHours := make(map[string]float64)
 
 	// Sort projects by name for consistent display
 	var projectNames []string
@@ -238,6 +279,9 @@ func showWeeklySummary(client *harvest.Client, startDate time.Time) {
 					hoursInt,
 					minutes)
 			}
+
+			// Aggregate hours by task across all projects
+			taskHours[taskName] += hours
 		}
 
 		totalHours += summary.TotalHours
@@ -249,6 +293,36 @@ func showWeeklySummary(client *harvest.Client, startDate time.Time) {
 	// Print total
 	totalHoursInt, totalMinutes := convertDecimalToHoursMinutes(totalHours)
 	fmt.Printf("\nTotal: %02d:%02d hours\n", totalHoursInt, totalMinutes)
+
+	// Print task-based aggregation
+	fmt.Println("\nTime by Task (across all projects):")
+	fmt.Println("------------------------------------")
+
+	// Sort tasks by name
+	var taskNames []string
+	for taskName := range taskHours {
+		taskNames = append(taskNames, taskName)
+	}
+	sort.Strings(taskNames)
+
+	// Create a new tabwriter for task summary
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(tw, "Task\tDuration\t% of Total")
+	fmt.Fprintln(tw, "----\t--------\t----------")
+
+	for _, taskName := range taskNames {
+		hours := taskHours[taskName]
+		hoursInt, minutes := convertDecimalToHoursMinutes(hours)
+		percentage := (hours / totalHours) * 100
+
+		fmt.Fprintf(tw, "%s\t%02d:%02d\t%.1f%%\n",
+			taskName,
+			hoursInt,
+			minutes,
+			percentage)
+	}
+
+	tw.Flush()
 
 	// Offer navigation options
 	handleSummaryNavigation(client, startDate, "week")
@@ -307,6 +381,7 @@ func showMonthlySummary(client *harvest.Client, startDate time.Time) {
 	fmt.Fprintln(w, "-------\t----\t--------")
 
 	var totalHours float64
+	taskHours := make(map[string]float64)
 
 	// Sort projects by name for consistent display
 	var projectNames []string
@@ -343,6 +418,9 @@ func showMonthlySummary(client *harvest.Client, startDate time.Time) {
 					hoursInt,
 					minutes)
 			}
+
+			// Aggregate hours by task across all projects
+			taskHours[taskName] += hours
 		}
 
 		totalHours += summary.TotalHours
@@ -354,6 +432,36 @@ func showMonthlySummary(client *harvest.Client, startDate time.Time) {
 	// Print total
 	totalHoursInt, totalMinutes := convertDecimalToHoursMinutes(totalHours)
 	fmt.Printf("\nTotal: %02d:%02d hours\n", totalHoursInt, totalMinutes)
+
+	// Print task-based aggregation
+	fmt.Println("\nTime by Task (across all projects):")
+	fmt.Println("------------------------------------")
+
+	// Sort tasks by name
+	var taskNames []string
+	for taskName := range taskHours {
+		taskNames = append(taskNames, taskName)
+	}
+	sort.Strings(taskNames)
+
+	// Create a new tabwriter for task summary
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(tw, "Task\tDuration\t% of Total")
+	fmt.Fprintln(tw, "----\t--------\t----------")
+
+	for _, taskName := range taskNames {
+		hours := taskHours[taskName]
+		hoursInt, minutes := convertDecimalToHoursMinutes(hours)
+		percentage := (hours / totalHours) * 100
+
+		fmt.Fprintf(tw, "%s\t%02d:%02d\t%.1f%%\n",
+			taskName,
+			hoursInt,
+			minutes,
+			percentage)
+	}
+
+	tw.Flush()
 
 	// Offer navigation options
 	handleSummaryNavigation(client, startDate, "month")
