@@ -69,38 +69,40 @@ if %ERRORLEVEL% neq 0 (
     echo %INSTALL_DIR% is already in your PATH. ✓
 )
 
-:: Check if config.json exists
+:: Create default config in user's home directory
+set "CONFIG_HOME=%USERPROFILE%\.harvest-config.json"
+echo Creating default config at %CONFIG_HOME%...
+(
+    echo {
+    echo   "projects": [
+    echo     {
+    echo       "id": 123,
+    echo       "name": "Project A",
+    echo       "tasks": [
+    echo         {
+    echo           "id": 456,
+    echo           "name": "Software Development"
+    echo         },
+    echo         {
+    echo           "id": 678,
+    echo           "name": "Non-Billable"
+    echo         }
+    echo       ]
+    echo     }
+    echo   ],
+    echo   "default_project": "Project A",
+    echo   "default_task": "Software Development",
+    echo   "harvest_api": {
+    echo     "account_id": "YOUR_HARVEST_ACCOUNT_ID",
+    echo     "token": "YOUR_HARVEST_API_TOKEN"
+    echo   }
+    echo }
+) > "%CONFIG_HOME%"
+
+:: Also create a local config.json if it doesn't exist
 if not exist "config.json" (
-    echo Creating sample config.json...
-    (
-        echo {
-        echo   "projects": [
-        echo     {
-        echo       "id": 123,
-        echo       "name": "Project A",
-        echo       "tasks": [
-        echo         {
-        echo           "id": 456,
-        echo           "name": "Software Development"
-        echo         },
-        echo         {
-        echo           "id": 678,
-        echo           "name": "Non-Billable"
-        echo         }
-        echo       ]
-        echo     }
-        echo   ],
-        echo   "default_project": "Project A",
-        echo   "default_task": "Software Development",
-        echo   "harvest_api": {
-        echo     "account_id": "YOUR_HARVEST_ACCOUNT_ID",
-        echo     "token": "YOUR_HARVEST_API_TOKEN"
-        echo   }
-        echo }
-    ) > config.json
-    
-    echo A sample config.json has been created.
-    echo Please edit it with your Harvest API credentials before using the tool.
+    echo Creating local config.json as well...
+    copy /Y "%CONFIG_HOME%" "config.json" >nul
 )
 
 echo.
@@ -110,12 +112,14 @@ echo For help, run 'h --help'
 
 :: Provide instructions for getting Harvest API credentials
 echo.
-echo Don't forget to update your config.json with your Harvest API credentials:
+echo Don't forget to update your config files with your Harvest API credentials:
 echo 1. Log in to your Harvest account
 echo 2. Go to Settings ^> Developer
 echo 3. Create a new personal access token
 echo 4. Note your Account ID and Token
-echo 5. Update the config.json file with these values
+echo 5. Update the config files with these values:
+echo    - %CONFIG_HOME% (global config)
+echo    - .\config.json (local config, if you want project-specific settings)
 
 :: Provide instructions for first use
 echo.

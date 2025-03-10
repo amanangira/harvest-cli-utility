@@ -2,7 +2,7 @@
 
 A simple command-line utility for logging time entries directly from your terminal to your Harvest account. This tool helps developers and teams track their time efficiently without leaving the command line.
 
-Harvest CLI Demo
+![Harvest CLI Demo](https://via.placeholder.com/800x400?text=Harvest+CLI+Demo)
 
 ## Features
 
@@ -61,8 +61,9 @@ The installation scripts will:
 1. Check if Go is installed with the right version
 2. Build the project
 3. Install the binary to your PATH
-4. Create a sample config.json if one doesn't exist
-5. Provide instructions for configuration
+4. Create a global config file at `~/.harvest-config.json` (or `%USERPROFILE%\.harvest-config.json` on Windows)
+5. Create a local config.json in the current directory (for project-specific settings)
+6. Provide instructions for configuration
 
 #### Manual Installation
 
@@ -83,11 +84,33 @@ go build -o h
 mv h /usr/local/bin/
 # For Windows (in PowerShell, run as Administrator):
 # Copy-Item -Path .\h.exe -Destination "$env:USERPROFILE\bin\h.exe"
+
+# Create a global config file
+# For macOS/Linux:
+cat > ~/.harvest-config.json << EOF
+{
+  "projects": [],
+  "default_project": "",
+  "default_task": "",
+  "harvest_api": {
+    "account_id": "YOUR_HARVEST_ACCOUNT_ID",
+    "token": "YOUR_HARVEST_API_TOKEN"
+  }
+}
+EOF
+# For Windows (in PowerShell):
+# Set-Content -Path "$env:USERPROFILE\.harvest-config.json" -Value "{`"projects`":[],`"default_project`":`"`",`"default_task`":`"`",`"harvest_api`":{`"account_id`":`"YOUR_HARVEST_ACCOUNT_ID`",`"token`":`"YOUR_HARVEST_API_TOKEN`"}}"
 ```
 
 ### Configuration
 
-Create a `config.json` file in the same directory as the executable with your Harvest API credentials and project information:
+The application looks for configuration in the following locations (in order):
+1. `config.json` in the current directory (for project-specific settings)
+2. In the same directory as the executable
+3. `~/.harvest-config.json` (or `%USERPROFILE%\.harvest-config.json` on Windows) for global settings
+4. In the parent directory
+
+Create or edit your configuration file with your Harvest API credentials and project information:
 
 ```json
 {
@@ -263,9 +286,10 @@ h delete -d 2023-03-06
 
 ### Common Issues
 
-1. **API Authentication Errors**: Ensure your Harvest API credentials are correct in config.json
-2. **Project/Task Not Found**: Verify that project and task names match exactly with your config.json
+1. **API Authentication Errors**: Ensure your Harvest API credentials are correct in your config file
+2. **Project/Task Not Found**: Verify that project and task names match exactly with your configuration
 3. **Command Not Found**: Make sure the binary is in your PATH or use the full path to the executable
+4. **Config Not Found**: Check that you have a valid config file in one of the supported locations
 
 ### Getting Help
 

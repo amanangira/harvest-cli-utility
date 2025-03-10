@@ -37,6 +37,12 @@ type Task struct {
 
 // LoadConfig loads the configuration from the config.json file
 func LoadConfig() (*Config, error) {
+	// Get the user's home directory
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user home directory: %w", err)
+	}
+
 	// Get the executable directory
 	execPath, err := os.Executable()
 	if err != nil {
@@ -46,9 +52,10 @@ func LoadConfig() (*Config, error) {
 
 	// Try to find config.json in different locations
 	configPaths := []string{
-		filepath.Join(execDir, "config.json"),
-		"config.json",
-		filepath.Join("..", "config.json"),
+		"config.json",                                  // Current directory
+		filepath.Join(execDir, "config.json"),          // Executable directory
+		filepath.Join(homeDir, ".harvest-config.json"), // User's home directory
+		filepath.Join("..", "config.json"),             // Parent directory
 	}
 
 	var configFile *os.File
@@ -64,7 +71,7 @@ func LoadConfig() (*Config, error) {
 	}
 
 	if configFile == nil {
-		return nil, fmt.Errorf("config.json not found in any of the expected locations")
+		return nil, fmt.Errorf("config.json not found in any of the expected locations: %v", configPaths)
 	}
 	defer configFile.Close()
 

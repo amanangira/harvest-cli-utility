@@ -85,10 +85,10 @@ else  # Windows
     fi
 fi
 
-# Check if config.json exists
-if [[ ! -f "config.json" ]]; then
-    echo -e "${BLUE}Creating sample config.json...${NC}"
-    cat > config.json << EOF
+# Create default config in user's home directory
+CONFIG_HOME="$HOME/.harvest-config.json"
+echo -e "${BLUE}Creating default config at $CONFIG_HOME...${NC}"
+cat > "$CONFIG_HOME" << EOF
 {
   "projects": [
     {
@@ -114,8 +114,11 @@ if [[ ! -f "config.json" ]]; then
   }
 }
 EOF
-    echo -e "${YELLOW}A sample config.json has been created.${NC}"
-    echo -e "${YELLOW}Please edit it with your Harvest API credentials before using the tool.${NC}"
+
+# Also create a local config.json if it doesn't exist
+if [[ ! -f "config.json" ]]; then
+    echo -e "${BLUE}Creating local config.json as well...${NC}"
+    cp "$CONFIG_HOME" "config.json"
 fi
 
 echo -e "${GREEN}Installation complete!${NC}"
@@ -123,12 +126,14 @@ echo -e "${GREEN}You can now use the Harvest CLI utility by running 'h' in your 
 echo -e "${BLUE}For help, run 'h --help'${NC}"
 
 # Provide instructions for getting Harvest API credentials
-echo -e "\n${YELLOW}Don't forget to update your config.json with your Harvest API credentials:${NC}"
+echo -e "\n${YELLOW}Don't forget to update your config files with your Harvest API credentials:${NC}"
 echo -e "1. Log in to your Harvest account"
 echo -e "2. Go to Settings > Developer"
 echo -e "3. Create a new personal access token"
 echo -e "4. Note your Account ID and Token"
-echo -e "5. Update the config.json file with these values"
+echo -e "5. Update the config files with these values:"
+echo -e "   - ${BLUE}$CONFIG_HOME${NC} (global config)"
+echo -e "   - ${BLUE}./config.json${NC} (local config, if you want project-specific settings)"
 
 # Provide instructions for first use
 echo -e "\n${BLUE}Quick start:${NC}"
