@@ -14,6 +14,7 @@ A simple command-line utility for logging time entries directly from your termin
 - ✅ Tabular output format for better readability
 - ✅ Date filtering for all commands
 - ✅ Default interactive mode for better user experience
+- ✅ Configuration inspection for easy troubleshooting
 
 ## Quick Start
 
@@ -247,6 +248,19 @@ The list command now provides detailed task-based aggregation for all views:
 
 This makes it easy to see how your time is distributed across different tasks, regardless of which projects they belong to.
 
+#### Check Configuration
+
+```bash
+# Display configuration file path and contents (sensitive data masked)
+h config
+
+# Display configuration with sensitive information visible
+h config -s
+```
+
+Flags:
+- `-s, --show-sensitive`: Show sensitive information like API tokens
+
 ## Common Workflows
 
 ### Log Time for Today
@@ -304,6 +318,16 @@ h list -w
 h list -m
 ```
 
+### Check Configuration Settings
+
+```bash
+# View which configuration file is being used and its contents
+h config
+
+# Troubleshoot API connection issues by viewing sensitive data
+h config -s
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -323,6 +347,7 @@ h create --help
 h delete --help
 h update --help
 h list --help
+h config --help
 ```
 
 ## Contributing

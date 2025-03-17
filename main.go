@@ -26,6 +26,7 @@ Complete documentation is available at https://github.com/amanangira/harvest-cli
 	rootCmd.AddCommand(cmd.DeleteCmd())
 	rootCmd.AddCommand(cmd.UpdateCmd())
 	rootCmd.AddCommand(cmd.ListCmd())
+	rootCmd.AddCommand(cmd.ConfigCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
