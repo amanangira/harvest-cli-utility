@@ -2,7 +2,7 @@
 
 A simple command-line utility for logging time entries directly from your terminal to your Harvest account. This tool helps developers and teams track their time efficiently without leaving the command line.
 
-![Harvest CLI Demo](https://via.placeholder.com/800x400?text=Harvest+CLI+Demo)
+![Harvest CLI Demo](https://github.com/amanangira/harvest-cli-utility/logo.jpeg?text=Harvest+CLI+Utility)
 
 ## Features
 
