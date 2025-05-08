@@ -85,10 +85,11 @@ else  # Windows
     fi
 fi
 
-# Create default config in user's home directory
+# Create default config in user's home directory only if it doesn't exist
 CONFIG_HOME="$HOME/.harvest-config.json"
-echo -e "${BLUE}Creating default config at $CONFIG_HOME...${NC}"
-cat > "$CONFIG_HOME" << EOF
+if [[ ! -f "$CONFIG_HOME" ]]; then
+    echo -e "${BLUE}Creating default config at $CONFIG_HOME...${NC}"
+    cat > "$CONFIG_HOME" << EOF
 {
   "projects": [
     {
@@ -108,12 +109,18 @@ cat > "$CONFIG_HOME" << EOF
   ],
   "default_project": "Project A",
   "default_task": "Software Development",
+  "year_start_date": "01-01",
+  "monthly_capacity_hours": 160,
+  "billable_task_ids": [456],
   "harvest_api": {
     "account_id": "YOUR_HARVEST_ACCOUNT_ID",
     "token": "YOUR_HARVEST_API_TOKEN"
   }
 }
 EOF
+else
+    echo -e "${GREEN}Found existing config at $CONFIG_HOME, skipping creation...${NC}"
+fi
 
 # Also create a local config.json if it doesn't exist
 if [[ ! -f "config.json" ]]; then

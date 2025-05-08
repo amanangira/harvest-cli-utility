@@ -5,14 +5,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 // Config represents the application configuration
 type Config struct {
-	Projects       []Project `json:"projects"`
-	DefaultProject string    `json:"default_project,omitempty"`
-	DefaultTask    string    `json:"default_task,omitempty"`
-	HarvestAPI     APIConfig `json:"harvest_api"`
+	Projects             []Project `json:"projects"`
+	DefaultProject       string    `json:"default_project,omitempty"`
+	DefaultTask          string    `json:"default_task,omitempty"`
+	YearStartDate        string    `json:"year_start_date,omitempty"`        // Format: "MM-DD", defaults to "01-01" if not specified
+	MonthlyCapacityHours float64   `json:"monthly_capacity_hours,omitempty"` // Default: 160 hours
+	BillableTaskIDs      []int     `json:"billable_task_ids,omitempty"`      // IDs of tasks considered billable for utilization calculation
+	HarvestAPI           APIConfig `json:"harvest_api"`
 }
 
 // APIConfig represents the Harvest API configuration
@@ -146,4 +151,52 @@ func (c *Config) GetDefaultTask(project *Project) *Task {
 	}
 
 	return project.GetTaskByName(c.DefaultTask)
+}
+
+// GetYearStartDate returns the configured year start date or January 1st if not configured
+func (c *Config) GetYearStartDate() (int, int, error) {
+	if c.YearStartDate == "" {
+		return 1, 1, nil // Default to January 1st
+	}
+
+	// Parse the MM-DD format
+	parts := strings.Split(c.YearStartDate, "-")
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("invalid year_start_date format: %s, expected MM-DD", c.YearStartDate)
+	}
+
+	month, err := strconv.Atoi(parts[0])
+	if err != nil || month < 1 || month > 12 {
+		return 0, 0, fmt.Errorf("invalid month in year_start_date: %s", parts[0])
+	}
+
+	day, err := strconv.Atoi(parts[1])
+	if err != nil || day < 1 || day > 31 {
+		return 0, 0, fmt.Errorf("invalid day in year_start_date: %s", parts[1])
+	}
+
+	return month, day, nil
+}
+
+// GetMonthlyCapacityHours returns the configured monthly capacity hours or default value of 160
+func (c *Config) GetMonthlyCapacityHours() float64 {
+	if c.MonthlyCapacityHours <= 0 {
+		return 160.0 // Default monthly capacity is 160 hours
+	}
+	return c.MonthlyCapacityHours
+}
+
+// IsBillableTask checks if a task ID is in the list of billable task IDs
+func (c *Config) IsBillableTask(taskID int) bool {
+	// If no billable tasks are defined, consider all tasks billable
+	if len(c.BillableTaskIDs) == 0 {
+		return true
+	}
+
+	for _, id := range c.BillableTaskIDs {
+		if id == taskID {
+			return true
+		}
+	}
+	return false
 }

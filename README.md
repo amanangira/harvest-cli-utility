@@ -93,6 +93,9 @@ cat > ~/.harvest-config.json << EOF
   "projects": [],
   "default_project": "",
   "default_task": "",
+  "year_start_date": "01-01",
+  "monthly_capacity_hours": 160,
+  "billable_task_ids": [],
   "harvest_api": {
     "account_id": "YOUR_HARVEST_ACCOUNT_ID",
     "token": "YOUR_HARVEST_API_TOKEN"
@@ -100,7 +103,7 @@ cat > ~/.harvest-config.json << EOF
 }
 EOF
 # For Windows (in PowerShell):
-# Set-Content -Path "$env:USERPROFILE\.harvest-config.json" -Value "{`"projects`":[],`"default_project`":`"`",`"default_task`":`"`",`"harvest_api`":{`"account_id`":`"YOUR_HARVEST_ACCOUNT_ID`",`"token`":`"YOUR_HARVEST_API_TOKEN`"}}"
+# Set-Content -Path "$env:USERPROFILE\.harvest-config.json" -Value "{`"projects`":[],`"default_project`":`"`",`"default_task`":`"`",`"year_start_date`":`"01-01`",`"monthly_capacity_hours`":160,`"billable_task_ids`":[],`"harvest_api`":{`"account_id`":`"YOUR_HARVEST_ACCOUNT_ID`",`"token`":`"YOUR_HARVEST_API_TOKEN`"}}"
 ```
 
 ### Configuration
@@ -133,6 +136,9 @@ Create or edit your configuration file with your Harvest API credentials and pro
   ],
   "default_project": "Project A",
   "default_task": "Software Development",
+  "year_start_date": "01-01",
+  "monthly_capacity_hours": 160,
+  "billable_task_ids": [456],
   "harvest_api": {
     "account_id": "YOUR_HARVEST_ACCOUNT_ID",
     "token": "YOUR_HARVEST_API_TOKEN"
@@ -232,21 +238,28 @@ h list -w
 
 # Show monthly summary
 h list -m
+
+# Show yearly summary
+h list -y
 ```
 
 Flags:
 - `-d, --date string`: Date in YYYY-MM-DD format (default: today)
 - `-m, --monthly`: Show monthly summary
 - `-w, --weekly`: Show weekly summary
+- `-y, --yearly`: Show yearly summary (based on year_start_date in config)
 
 **Enhanced Output:**
 
 The list command now provides detailed task-based aggregation for all views:
 - Daily view: Shows individual time entries followed by a task summary with percentages
 - Weekly view: Shows project/task breakdown followed by a task-only summary across all projects
-- Monthly view: Shows project/task breakdown followed by a task-only summary across all projects
+- Monthly view: Shows capacity utilization metrics, billable vs. non-billable hours, project/task breakdown with billable status, and a task-only summary across all projects
+- Yearly view: Shows capacity utilization metrics, billable vs. non-billable hours, project/task breakdown with billable status, and a task-only summary across all projects for the entire year
 
-This makes it easy to see how your time is distributed across different tasks, regardless of which projects they belong to.
+The yearly view respects the `year_start_date` configuration option (format: "MM-DD") which lets you define when your year starts. If not specified, it defaults to January 1st (01-01).
+
+Monthly and yearly views now include capacity utilization metrics based on the `monthly_capacity_hours` setting (defaults to 160 hours) and billable hours calculated using the `billable_task_ids` list in your configuration.
 
 #### Check Configuration
 
@@ -316,6 +329,9 @@ h list -w
 
 # View task distribution for the month
 h list -m
+
+# View task distribution for the entire year
+h list -y
 ```
 
 ### Check Configuration Settings
@@ -327,6 +343,22 @@ h config
 # Troubleshoot API connection issues by viewing sensitive data
 h config -s
 ```
+
+### Check Utilization Metrics
+
+```bash
+# View monthly utilization metrics
+h list -m
+
+# View yearly utilization metrics
+h list -y
+```
+
+In both monthly and yearly views, you'll see:
+- Capacity threshold (based on monthly_capacity_hours setting)
+- Total hours worked and percentage of capacity
+- Billable vs. non-billable hours breakdown
+- Per-task utilization with billable status
 
 ## Troubleshooting
 
